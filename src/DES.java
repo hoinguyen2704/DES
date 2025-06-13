@@ -1,4 +1,3 @@
-import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -123,7 +122,7 @@ public class DES {
     };
 
     public static void main(String[] args) {
-        String inputText = "0123456789ABCDEF";
+        String inputText = "0123456789ABCDEh";
         String keyText = "133457799BBCDFF1"; // Example key text
 
         // Convert input text and key to binary
@@ -144,12 +143,29 @@ public class DES {
         System.out.println("Decrypted hex: " + decryptedHex);
     }
 
-    private static int[] textToBinary(String text) {
-        int[] binary = new int[text.length() * 4]; // 4 bits per hex character
-        for (int i = 0; i < text.length(); i++) {
-            int value = Integer.parseInt(String.valueOf(text.charAt(i)), 16);
-            for (int j = 0; j < 4; j++) {
-                binary[i * 4 + j] = (value >> (3 - j)) & 1;
+    static int[] textToBinary(String text) {
+        int len = text.length();
+        // Each hex character is 4 bits, so 16 hex chars = 64 bits
+        if (len < 16) {
+            // Pad with '0' to the left if not enough for 64 bits
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 16 - len; i++) {
+                sb.append('0');
+            }
+            sb.append(text);
+            text = sb.toString();
+            len = 16;
+        }
+        int[] binary = new int[len * 4]; // 4 bits per hex character
+        for (int i = 0; i < len; i++) {
+            char c = text.charAt(i);
+            try {
+                int value = Integer.parseInt(String.valueOf(c), 16);
+                for (int j = 0; j < 4; j++) {
+                    binary[i * 4 + j] = (value >> (3 - j)) & 1;
+                }
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("Input string must be hexadecimal. Invalid character: '" + c + "'");
             }
         }
         return binary;
@@ -181,7 +197,7 @@ public class DES {
         return text.toString();
     }
 
-    private static int[] encryptText(int[] plaintext, int[] key) {
+    static int[] encryptText(int[] plaintext, int[] key) {
         int[] encrypted = new int[plaintext.length];
         for (int i = 0; i < plaintext.length; i += 64) {
             int[] block = new int[64];
@@ -192,7 +208,7 @@ public class DES {
         return encrypted;
     }
 
-    private static int[] decryptText(int[] encryptedText, int[] key) {
+    static int[] decryptText(int[] encryptedText, int[] key) {
         int[] decrypted = new int[encryptedText.length];
         for (int i = 0; i < encryptedText.length; i += 64) {
             int[] block = new int[64];
@@ -319,7 +335,7 @@ public class DES {
         return output;
     }
 
-    private static String binaryToHex(int[] binary) {
+    static String binaryToHex(int[] binary) {
         StringBuilder hex = new StringBuilder();
         for (int i = 0; i < binary.length; i += 4) {
             int value = 0;
@@ -351,4 +367,19 @@ public class DES {
         }
         return hexString.toString();
     }
+
+    public static List<String> splitHexToBlocks(String hexText) {
+        List<String> blocks = new ArrayList<>();
+        int len = hexText.length();
+        while (len % 16 != 0) {
+            hexText = "0" + hexText; // Padding bằng 0 nếu độ dài không chia hết cho 16
+            len++;
+        }
+        for (int i = 0; i < len; i += 16) {
+            String block = hexText.substring(i, Math.min(i + 16, len));
+            blocks.add(block);
+        }
+        return blocks;
+    }
+
 }
