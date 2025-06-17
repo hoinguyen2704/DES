@@ -364,11 +364,12 @@ public class MaHoaDESUI extends JFrame {
         JFileChooser fileChooser = new JFileChooser();
         btnDecBrowseFile.addActionListener(e -> {
             fileChooser.setDialogTitle("Chọn file để giải mã");
-            int userSelection = fileChooser.showOpenDialog(this);
+            int userSelection = fileChooser.showOpenDialog(MaHoaDESUI.this);
+            
             if (userSelection == JFileChooser.APPROVE_OPTION) {
                 java.io.File fileToOpen = fileChooser.getSelectedFile();
                 txtDecFile.setText(fileToOpen.getAbsolutePath());
-
+                
                 try {
                     // Kiểm tra xem file có phải là file bảo mật không (có định dạng
                     // [CHECKSUM]|[KEY]|[DATA])
@@ -389,6 +390,7 @@ public class MaHoaDESUI extends JFrame {
 
                             // Hiển thị khóa đọc được lên txtDecKeyFile và txtDecKeyText
                             txtDecKeyFile.setText(data.getKey());
+                            txtDecKeyFile.setEditable(false);
                             txtDecKeyText.setText(data.getKey());
 
                             // Cập nhật tên file đầu ra
@@ -406,7 +408,7 @@ public class MaHoaDESUI extends JFrame {
 
                             JOptionPane.showMessageDialog(this,
                                     "Đã tải file bảo mật thành công!\n" +
-                                            "Khóa đã được tự động điền.");
+                                            "Khóa đã được tự động điền và không thể thay đổi.");
                         } catch (IllegalArgumentException ex) {
                             // Nếu file không đúng định dạng hoặc khóa đã bị sửa
                             JOptionPane.showMessageDialog(this,
@@ -421,6 +423,10 @@ public class MaHoaDESUI extends JFrame {
 
                         // Hiển thị nội dung văn bản lên taDecCipherFile
                         taDecCipherFile.setText(fileContent);
+                        
+                        // Cho phép sửa khóa vì đây là file thông thường
+                        txtDecKeyFile.setEditable(true);
+                        txtDecKeyText.setEditable(true);
 
                         // Cập nhật tên file đầu ra
                         String fileName = fileToOpen.getName();
@@ -506,8 +512,8 @@ public class MaHoaDESUI extends JFrame {
                     currentDecryptData = new DESData(fileHex, key);
                 }
 
-                // Cập nhật khóa nếu đã thay đổi
-                if (!key.equals(currentDecryptData.getKey())) {
+                // Nếu trường khóa có thể chỉnh sửa, cập nhật khóa nếu đã thay đổi
+                if (txtDecKeyFile.isEditable() && !key.equals(currentDecryptData.getKey())) {
                     currentDecryptData.setKey(key);
                 }
 
@@ -537,7 +543,7 @@ public class MaHoaDESUI extends JFrame {
                     decryptedAscii = decryptedAscii.trim();
                 } catch (Exception ex) {
                     // Nếu không thể chuyển đổi, sử dụng ISO-8859-1 (Latin-1)
-                    decryptedAscii = new String(decryptedBytes, "ISO-8859-1");
+                    decryptedAscii = new String(decryptedBytes, "ISO-8859-1").trim();
                 }
 
                 // Hiển thị kết quả
@@ -701,7 +707,20 @@ public class MaHoaDESUI extends JFrame {
         c.anchor = GridBagConstraints.EAST;
         btnDecDecryptText = new JButton("Giải mã văn bản");
         panelDec.add(btnDecDecryptText, c);
-        btnDecDecryptText.addActionListener(e -> giaiMaVanBan());
+        btnDecDecryptText.addActionListener(e -> {
+            // Nếu trường khóa bị vô hiệu hóa, sử dụng khóa hiện tại
+            if (!txtDecKeyText.isEditable()) {
+                giaiMaVanBan();
+            } else {
+                // Nếu trường khóa có thể chỉnh sửa, kiểm tra xem đã nhập khóa chưa
+                String key = txtDecKeyText.getText().trim();
+                if (key.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng nhập khóa!");
+                    return;
+                }
+                giaiMaVanBan();
+            }
+        });
         // --- TỔNG HỢP VÀO SPLIT PANE ---
         JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, panelEnc, panelDec);
         split.setResizeWeight(0.5);
