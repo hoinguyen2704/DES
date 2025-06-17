@@ -97,7 +97,8 @@ public class DESData {
     // Lưu dữ liệu vào file
     public void saveToFile(String filePath) throws java.io.IOException {
         java.io.File file = new java.io.File(filePath);
-        try (java.io.FileWriter writer = new java.io.FileWriter(file)) {
+        try (java.io.OutputStreamWriter writer = new java.io.OutputStreamWriter(
+                new java.io.FileOutputStream(file), "UTF-8")) {
             // Format: [CHECKSUM]|[KEY]|[DATA]
             writer.write(checksum + "|" + key + "|" + textHex);
         }
@@ -106,7 +107,7 @@ public class DESData {
     // Đọc dữ liệu từ file
     public static DESData loadFromFile(String filePath) throws java.io.IOException, IllegalArgumentException {
         java.io.File file = new java.io.File(filePath);
-        String content = new String(java.nio.file.Files.readAllBytes(file.toPath())).trim();
+        String content = new String(java.nio.file.Files.readAllBytes(file.toPath()), "UTF-8").trim();
         
         String[] parts = content.split("\\|");
         if (parts.length != 3) {
@@ -155,3 +156,4 @@ public class DESData {
         return new DESData(decryptedHex, key);
     }
 }
+

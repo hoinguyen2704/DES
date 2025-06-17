@@ -1,5 +1,7 @@
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class DES {
     // Constants for DES algorithm
@@ -360,47 +362,84 @@ public class DES {
             bytes[i] = (byte) v;
         }
         
-        // Thử chuyển đổi sang UTF-8
+        // Thử với nhiều mã hóa khác nhau
+        Map<String, String> results = new HashMap<>();
+        
+        // Thử với UTF-8
         try {
-            String text = new String(bytes, "UTF-8");
-            // Kiểm tra xem văn bản có đọc được không
-            if (isPrintableText(text)) {
-                // Cắt bớt các dấu space thừa ở hai đầu văn bản
-                return text.trim();
+            String utf8Text = new String(bytes, "UTF-8");
+            if (isPrintableText(utf8Text)) {
+                return utf8Text.trim();
             }
+            results.put("UTF-8", utf8Text.trim());
         } catch (Exception e) {
-            // Bỏ qua lỗi và thử mã hóa khác
+            results.put("UTF-8", "[Lỗi]");
         }
         
-        // Thử với ISO-8859-1 (Latin-1)
+        // Thử với ISO-8859-1
         try {
-            String text = new String(bytes, "ISO-8859-1");
-            // Cắt bớt các dấu space thừa ở hai đầu văn bản
-            return text.trim();
+            String isoText = new String(bytes, "ISO-8859-1");
+            if (isPrintableText(isoText)) {
+                return isoText.trim();
+            }
+            results.put("ISO-8859-1", isoText.trim());
         } catch (Exception e) {
-            // Nếu không thể chuyển đổi, trả về chuỗi rỗng
-            return "";
+            results.put("ISO-8859-1", "[Lỗi]");
         }
+        
+        // Thử với windows-1252
+        try {
+            String winText = new String(bytes, "windows-1252");
+            if (isPrintableText(winText)) {
+                return winText.trim();
+            }
+            results.put("windows-1252", winText.trim());
+        } catch (Exception e) {
+            results.put("windows-1252", "[Lỗi]");
+        }
+        
+        // Nếu không có kết quả nào tốt, trả về kết quả UTF-8 hoặc ISO-8859-1
+        return results.getOrDefault("UTF-8", results.getOrDefault("ISO-8859-1", ""));
     }
 
     // Phương thức kiểm tra xem văn bản có đọc được không
     private static boolean isPrintableText(String text) {
-        // Kiểm tra xem văn bản có chứa quá nhiều ký tự không in được không
+        // Đối với tiếng Việt, chúng ta cần kiểm tra khác
         int nonPrintableCount = 0;
         for (char c : text.toCharArray()) {
-            if (c < 32 || c > 126) {
+            // Cho phép các ký tự Unicode tiếng Việt và các ký tự điều khiển cơ bản
+            if (c < 32 && c != '\n' && c != '\r' && c != '\t') {
                 nonPrintableCount++;
             }
         }
-        // Nếu hơn 20% ký tự không in được, coi như văn bản không đọc được
-        return nonPrintableCount < text.length() * 0.2;
+        // Nếu hơn 10% ký tự không in được, coi như văn bản không đọc được
+        return nonPrintableCount < text.length() * 0.1;
     }
 
     public static String textToHex(String text) {
         StringBuilder hexString = new StringBuilder();
-        for (char ch : text.toCharArray()) {
-            hexString.append(String.format("%02X", (int) ch)); // Chuyển từng ký tự sang hex
+        
+        // Chuyển đổi chuỗi sang mảng byte sử dụng UTF-8
+        try {
+            byte[] bytes = text.getBytes("UTF-8");
+            for (byte b : bytes) {
+                hexString.append(String.format("%02X", b & 0xFF));
+            }
+        } catch (Exception e) {
+            // Nếu không thể chuyển đổi với UTF-8, thử với ISO-8859-1
+            try {
+                byte[] bytes = text.getBytes("ISO-8859-1");
+                for (byte b : bytes) {
+                    hexString.append(String.format("%02X", b & 0xFF));
+                }
+            } catch (Exception ex) {
+                // Nếu vẫn không được, sử dụng phương pháp cũ
+                for (char ch : text.toCharArray()) {
+                    hexString.append(String.format("%02X", (int) ch));
+                }
+            }
         }
+        
         return hexString.toString();
     }
 
@@ -419,4 +458,6 @@ public class DES {
     }
 
 }
+
+
 

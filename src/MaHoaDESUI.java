@@ -22,8 +22,20 @@ public class MaHoaDESUI extends JFrame {
     private DESData currentDecryptData;
 
     public MaHoaDESUI() {
-        super("MaHoaDES");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setTitle("Mã hóa và Giải mã DES");
+        setSize(1200, 800);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        // Đảm bảo sử dụng UTF-8 cho toàn bộ ứng dụng
+        System.setProperty("file.encoding", "UTF-8");
+        try {
+            java.lang.reflect.Field charset = java.nio.charset.Charset.class.getDeclaredField("defaultCharset");
+            charset.setAccessible(true);
+            charset.set(null, java.nio.charset.Charset.forName("UTF-8"));
+        } catch (Exception e) {
+            // Bỏ qua nếu không thể thiết lập
+        }
+        
         initComponents();
         pack();
         setLocationRelativeTo(null);
@@ -55,25 +67,38 @@ public class MaHoaDESUI extends JFrame {
         fileChooser = new JFileChooser();
         // Sự kiện chọn file: cập nhật txtEncFile và txtEncOutName
         btnEncBrowseFile.addActionListener(e -> {
-            int result = fileChooser.showOpenDialog(this);
-            if (result == JFileChooser.APPROVE_OPTION) {
+            int returnVal = fileChooser.showOpenDialog(this);
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
                 java.io.File selectedFile = fileChooser.getSelectedFile();
                 txtEncFile.setText(selectedFile.getAbsolutePath());
-                String fileHex = "";
+                
+                // Đọc nội dung file với UTF-8
                 try {
-                    fileHex = new String(java.nio.file.Files.readAllBytes(selectedFile.toPath())).trim();
+                    String fileContent = new String(java.nio.file.Files.readAllBytes(selectedFile.toPath()), "UTF-8");
+                    taEncPlainFile.setText(fileContent);
+                    
+                    // Hiển thị tên file (không có đường dẫn) lên txtEncOutName, thêm hậu tố ".txt"
+                    String fileName = selectedFile.getName();
+                    int dotIdx = fileName.lastIndexOf('.');
+                    String baseName = (dotIdx > 0) ? fileName.substring(0, dotIdx) : fileName;
+                    String outName = baseName + "_encrypted.txt";
+                    txtEncOutName.setText(outName);
                 } catch (java.io.IOException ex) {
-                    JOptionPane.showMessageDialog(this, "Lỗi khi đọc file: " + ex.getMessage());
-                    return;
+                    // Nếu không đọc được với UTF-8, thử với ISO-8859-1
+                    try {
+                        String fileContent = new String(java.nio.file.Files.readAllBytes(selectedFile.toPath()), "ISO-8859-1");
+                        taEncPlainFile.setText(fileContent);
+                        
+                        // Hiển thị tên file (không có đường dẫn) lên txtEncOutName, thêm hậu tố ".txt"
+                        String fileName = selectedFile.getName();
+                        int dotIdx = fileName.lastIndexOf('.');
+                        String baseName = (dotIdx > 0) ? fileName.substring(0, dotIdx) : fileName;
+                        String outName = baseName + "_encrypted.txt";
+                        txtEncOutName.setText(outName);
+                    } catch (java.io.IOException ex2) {
+                        JOptionPane.showMessageDialog(this, "Lỗi khi đọc file: " + ex2.getMessage());
+                    }
                 }
-                // Hiển thị tên file (không có đường dẫn) lên txtEncOutName, thêm hậu tố
-                // ".txt"
-                String fileName = selectedFile.getName();
-                int dotIdx = fileName.lastIndexOf('.');
-                String baseName = (dotIdx > 0) ? fileName.substring(0, dotIdx) : fileName;
-                String outName = baseName + "_encrypted.txt";
-                txtEncOutName.setText(outName);
-                taEncPlainFile.setText(fileHex);
             }
         });
 
@@ -196,8 +221,8 @@ public class MaHoaDESUI extends JFrame {
         c.gridwidth = 3;
         c.anchor = GridBagConstraints.WEST;
         c.fill = GridBagConstraints.NONE;
-        JLabel lblEncTextSection = new JLabel("Mã hóa văn bản");
-        lblEncTextSection.setFont(lblEncTextSection.getFont().deriveFont(Font.BOLD));
+        JLabel lblEncTextSection = new JLabel("MÃ HÓA VĂN BẢN");
+        lblEncTextSection.setFont(new Font(lblEncTextSection.getFont().getName(), Font.BOLD, 16));
         panelEnc.add(lblEncTextSection, c);
         c.gridwidth = 1;
 
@@ -534,9 +559,9 @@ public class MaHoaDESUI extends JFrame {
 
                 // Lưu ra file mới
                 java.io.File outFile = new java.io.File(inputFile.getParentFile(), outName);
-                try (java.io.FileWriter fw = new java.io.FileWriter(outFile)) {
-                    // Lưu kết quả dưới dạng văn bản đã cắt bớt space
-                    fw.write(decryptedAscii);
+                try (java.io.OutputStreamWriter writer = new java.io.OutputStreamWriter(
+                        new java.io.FileOutputStream(outFile), "UTF-8")) {
+                    writer.write(decryptedAscii);
                 }
 
                 JOptionPane.showMessageDialog(this, "Đã giải mã và lưu file: " + outFile.getAbsolutePath());
@@ -563,8 +588,8 @@ public class MaHoaDESUI extends JFrame {
         c.gridwidth = 3;
         c.anchor = GridBagConstraints.WEST;
         c.fill = GridBagConstraints.NONE;
-        JLabel lblDecTextSection = new JLabel("Giải mã văn bản");
-        lblDecTextSection.setFont(lblDecTextSection.getFont().deriveFont(Font.BOLD));
+        JLabel lblDecTextSection = new JLabel("GIẢI MÃ VĂN BẢN");
+        lblDecTextSection.setFont(new Font(lblDecTextSection.getFont().getName(), Font.BOLD, 16));
         panelDec.add(lblDecTextSection, c);
         c.gridwidth = 1;
 
@@ -622,12 +647,60 @@ public class MaHoaDESUI extends JFrame {
         c.gridwidth = 1;
         c.weighty = 0;
 
-        // Row 9: Buttons Giải mã văn bản
+        // Row 9: Buttons Giải mã văn bản và Lưu kết quả
         c.gridy = 9;
-        c.gridx = 2;
-        c.anchor = GridBagConstraints.EAST;
+        c.gridx = 1;
+        c.anchor = GridBagConstraints.WEST;
         c.fill = GridBagConstraints.NONE;
         c.weightx = 0;
+        JButton btnDecSaveResult = new JButton("Lưu kết quả");
+        panelDec.add(btnDecSaveResult, c);
+        btnDecSaveResult.addActionListener(e -> {
+            String decryptedText = taDecResultText.getText();
+            if (decryptedText.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Không có dữ liệu để lưu!");
+                return;
+            }
+            
+            // Tách phần văn bản UTF-8 (dòng đầu tiên)
+            String textToSave = decryptedText;
+            if (decryptedText.startsWith("UTF-8: ")) {
+                int endOfLine = decryptedText.indexOf("\n\n");
+                if (endOfLine > 0) {
+                    textToSave = decryptedText.substring(7, endOfLine).trim();
+                }
+            }
+            
+            fileChooser.setDialogTitle("Lưu kết quả giải mã");
+            fileChooser.setSelectedFile(new java.io.File("decrypted_text.txt"));
+            int userSelection = fileChooser.showSaveDialog(this);
+            
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                java.io.File fileToSave = fileChooser.getSelectedFile();
+                
+                // Thêm phần mở rộng .txt nếu người dùng không nhập
+                if (!fileToSave.getName().toLowerCase().endsWith(".txt")) {
+                    fileToSave = new java.io.File(fileToSave.getAbsolutePath() + ".txt");
+                }
+                
+                try {
+                    // Lưu văn bản đã giải mã ra file với UTF-8
+                    try (java.io.OutputStreamWriter writer = new java.io.OutputStreamWriter(
+                            new java.io.FileOutputStream(fileToSave), "UTF-8")) {
+                        writer.write(textToSave);
+                    }
+                    
+                    JOptionPane.showMessageDialog(this, 
+                        "Đã lưu kết quả giải mã thành công!\n" +
+                        "File: " + fileToSave.getAbsolutePath());
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Lỗi khi lưu file: " + ex.getMessage());
+                }
+            }
+        });
+
+        c.gridx = 2;
+        c.anchor = GridBagConstraints.EAST;
         btnDecDecryptText = new JButton("Giải mã văn bản");
         panelDec.add(btnDecDecryptText, c);
         btnDecDecryptText.addActionListener(e -> giaiMaVanBan());
@@ -639,65 +712,92 @@ public class MaHoaDESUI extends JFrame {
 
     private void maHoaVanBan() {
         String plaintext = taEncPlainFile.getText();
-        String key = txtEncKeyText.getText().toUpperCase();
+        String key = txtEncKeyText.getText().toUpperCase().trim();
         if (plaintext.isEmpty() || key.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập bản rõ và khóa!");
             return;
         }
 
-        // Tạo đối tượng DESData với văn bản ASCII
-        DESData data = new DESData(plaintext, key, true);
+        try {
+            // Chuyển đổi văn bản sang hex sử dụng UTF-8
+            String textHex = DES.textToHex(plaintext);
+            
+            // Chia thành các khối 16 ký tự hex (64 bit)
+            List<String> blocks = DES.splitHexToBlocks(textHex);
+            StringBuilder encryptedHexBuilder = new StringBuilder();
 
-        // Chuyển đổi văn bản ASCII sang hex và chia thành các khối
-        List<String> blocks = DES.splitHexToBlocks(data.getTextHex());
-        StringBuilder encryptedHexBuilder = new StringBuilder();
-
-        for (String block : blocks) {
-            // Padding nếu block < 16 ký tự
-            if (block.length() < 16) {
-                block = String.format("%-16s", block).replace(' ', '0');
+            for (String block : blocks) {
+                // Padding nếu block < 16 ký tự
+                if (block.length() < 16) {
+                    block = String.format("%-16s", block).replace(' ', '0');
+                }
+                
+                // Chuyển đổi hex sang binary
+                int[] plaintextBinary = DES.textToBinary(block);
+                int[] keyBinary = DES.textToBinary(key);
+                
+                // Mã hóa
+                int[] encryptedBinary = DES.encryptText(plaintextBinary, keyBinary);
+                
+                // Chuyển đổi binary sang hex
+                String encryptedBlock = DES.binaryToHex(encryptedBinary);
+                encryptedHexBuilder.append(encryptedBlock);
             }
-            DESData blockData = new DESData(block, key);
-            String encryptedBlock = blockData.encrypt();
-            encryptedHexBuilder.append(encryptedBlock);
+
+            String encryptedHex = encryptedHexBuilder.toString();
+            taEncResultText.setText(encryptedHex);
+
+            // Hiển thị thông tin về văn bản gốc
+            JOptionPane.showMessageDialog(this,
+                    "Mã hóa thành công!\n" +
+                            "Văn bản gốc: " + plaintext + "\n" +
+                            "Biểu diễn HEX: " + textHex + "\n" +
+                            "Kết quả mã hóa: " + encryptedHex);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi khi mã hóa: " + ex.getMessage());
         }
-
-        String encryptedHex = encryptedHexBuilder.toString();
-        taEncResultText.setText(encryptedHex);
-
-        // Hiển thị thông tin về văn bản gốc
-        JOptionPane.showMessageDialog(this,
-                "Mã hóa thành công!\n" +
-                        "Văn bản ASCII: " + plaintext + "\n" +
-                        "Biểu diễn HEX: " + data.getTextHex() + "\n" +
-                        "Kết quả mã hóa: " + encryptedHex);
     }
 
     private void giaiMaVanBan() {
-        String ciphertext = taDecCipherFile.getText().toUpperCase();
-        String key = txtDecKeyText.getText().toUpperCase();
+        String ciphertext = taDecCipherFile.getText().toUpperCase().trim();
+        String key = txtDecKeyText.getText().toUpperCase().trim();
         if (ciphertext.isEmpty() || key.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập bản mã và khóa!");
             return;
         }
-
+        
         // Đảm bảo ciphertext là hex hợp lệ
         if (!ciphertext.matches("^[0-9A-F]+$")) {
-            JOptionPane.showMessageDialog(this, "Bản mã phải ở dạng HEX (0-9, A-F)!",
-                    "Lỗi định dạng", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Bản mã phải ở dạng HEX (0-9, A-F)!", 
+                                         "Lỗi định dạng", JOptionPane.ERROR_MESSAGE);
             return;
         }
-
+        
         try {
-            // Tạo hoặc cập nhật đối tượng DESData
-            if (currentDecryptData == null || !ciphertext.equals(currentDecryptData.getTextHex())
-                    || !key.equals(currentDecryptData.getKey())) {
-                currentDecryptData = new DESData(ciphertext, key);
+            // Giải mã trực tiếp từ hex sang binary và ngược lại
+            List<String> blocks = DES.splitHexToBlocks(ciphertext);
+            StringBuilder decryptedHexBuilder = new StringBuilder();
+            
+            for (String block : blocks) {
+                // Padding nếu block < 16 ký tự
+                if (block.length() < 16) {
+                    block = String.format("%-16s", block).replace(' ', '0');
+                }
+                
+                // Chuyển đổi hex sang binary
+                int[] cipherBinary = DES.textToBinary(block);
+                int[] keyBinary = DES.textToBinary(key);
+                
+                // Giải mã
+                int[] decryptedBinary = DES.decryptText(cipherBinary, keyBinary);
+                
+                // Chuyển đổi binary sang hex
+                String decryptedBlock = DES.binaryToHex(decryptedBinary);
+                decryptedHexBuilder.append(decryptedBlock);
             }
-
-            // Giải mã sử dụng đối tượng DESData
-            String decryptedHex = currentDecryptData.decrypt();
-
+            
+            String decryptedHex = decryptedHexBuilder.toString();
+            
             // Chuyển đổi hex sang bytes
             byte[] decryptedBytes = new byte[decryptedHex.length() / 2];
             for (int i = 0; i < decryptedBytes.length; i++) {
@@ -705,32 +805,44 @@ public class MaHoaDESUI extends JFrame {
                 int v = Integer.parseInt(decryptedHex.substring(index, index + 2), 16);
                 decryptedBytes[i] = (byte) v;
             }
-
-            // Thử chuyển đổi sang UTF-8
-            String decryptedAscii;
+            
+            // Thử các mã hóa khác nhau và hiển thị tất cả
+            String decryptedUTF8 = "";
+            String decryptedISO = "";
+            String decryptedWindows = "";
+            
             try {
-                decryptedAscii = new String(decryptedBytes, "UTF-8");
-                // Kiểm tra xem văn bản có đọc được không
-                if (!isPrintableAscii(decryptedAscii)) {
-                    // Thử với các mã hóa khác
-                    decryptedAscii = new String(decryptedBytes, "ISO-8859-1");
-                }
+                decryptedUTF8 = new String(decryptedBytes, "UTF-8").trim();
             } catch (Exception ex) {
-                // Nếu không thể chuyển đổi, sử dụng ISO-8859-1 (Latin-1)
-                decryptedAscii = new String(decryptedBytes, "ISO-8859-1");
+                decryptedUTF8 = "[Không thể chuyển đổi sang UTF-8]";
             }
-
-            // Cắt bớt các dấu space thừa ở hai đầu văn bản
-            decryptedAscii = decryptedAscii.trim();
-
-            // Hiển thị kết quả chủ yếu là ASCII, với HEX ở dưới
-            taDecResultText.setText(decryptedAscii + "\n\n(HEX: " + decryptedHex + ")");
-
-            // Hiển thị thông báo thành công với thông tin chi tiết
-            JOptionPane.showMessageDialog(this,
-                    "Giải mã thành công!\n" +
-                            "Bản mã HEX: " + ciphertext + "\n" +
-                            "Kết quả giải mã (ASCII): " + decryptedAscii);
+            
+            try {
+                decryptedISO = new String(decryptedBytes, "ISO-8859-1").trim();
+            } catch (Exception ex) {
+                decryptedISO = "[Không thể chuyển đổi sang ISO-8859-1]";
+            }
+            
+            try {
+                decryptedWindows = new String(decryptedBytes, "windows-1252").trim();
+            } catch (Exception ex) {
+                decryptedWindows = "[Không thể chuyển đổi sang windows-1252]";
+            }
+            
+            // Hiển thị kết quả với nhiều mã hóa khác nhau
+            StringBuilder resultBuilder = new StringBuilder();
+            resultBuilder.append("UTF-8: ").append(decryptedUTF8).append("\n\n");
+            resultBuilder.append("ISO-8859-1: ").append(decryptedISO).append("\n\n");
+            resultBuilder.append("Windows-1252: ").append(decryptedWindows).append("\n\n");
+            resultBuilder.append("HEX: ").append(decryptedHex);
+            
+            taDecResultText.setText(resultBuilder.toString());
+            
+            // Hiển thị thông báo thành công
+            JOptionPane.showMessageDialog(this, 
+                "Giải mã thành công!\n" +
+                "Đã hiển thị kết quả với nhiều mã hóa khác nhau.\n" +
+                "Vui lòng chọn mã hóa phù hợp nhất với văn bản của bạn.");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Lỗi khi giải mã: " + ex.getMessage());
         }
@@ -817,6 +929,87 @@ public class MaHoaDESUI extends JFrame {
         }
         // Nếu hơn 20% ký tự không in được, coi như văn bản không đọc được
         return nonPrintableCount < text.length() * 0.2;
+    }
+
+    // Thêm phương thức để chọn mã hóa khi lưu kết quả
+    private void saveDecryptedTextWithEncoding() {
+        String decryptedText = taDecResultText.getText();
+        if (decryptedText.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Không có dữ liệu để lưu!");
+            return;
+        }
+        
+        // Tạo dialog để chọn mã hóa
+        String[] encodings = {"UTF-8", "ISO-8859-1", "windows-1252"};
+        String selectedEncoding = (String) JOptionPane.showInputDialog(
+            this,
+            "Chọn mã hóa để lưu file:",
+            "Chọn mã hóa",
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            encodings,
+            encodings[0]
+        );
+        
+        if (selectedEncoding == null) {
+            return; // Người dùng đã hủy
+        }
+        
+        // Tách phần văn bản theo mã hóa đã chọn
+        String textToSave = "";
+        if (selectedEncoding.equals("UTF-8") && decryptedText.contains("UTF-8: ")) {
+            int start = decryptedText.indexOf("UTF-8: ") + 7;
+            int end = decryptedText.indexOf("\n\n", start);
+            if (end > start) {
+                textToSave = decryptedText.substring(start, end).trim();
+            }
+        } else if (selectedEncoding.equals("ISO-8859-1") && decryptedText.contains("ISO-8859-1: ")) {
+            int start = decryptedText.indexOf("ISO-8859-1: ") + 12;
+            int end = decryptedText.indexOf("\n\n", start);
+            if (end > start) {
+                textToSave = decryptedText.substring(start, end).trim();
+            }
+        } else if (selectedEncoding.equals("windows-1252") && decryptedText.contains("Windows-1252: ")) {
+            int start = decryptedText.indexOf("Windows-1252: ") + 14;
+            int end = decryptedText.indexOf("\n\n", start);
+            if (end > start) {
+                textToSave = decryptedText.substring(start, end).trim();
+            }
+        }
+        
+        if (textToSave.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Không thể trích xuất văn bản với mã hóa đã chọn!");
+            return;
+        }
+        
+        // Hiển thị hộp thoại lưu file
+        fileChooser.setDialogTitle("Lưu kết quả giải mã");
+        fileChooser.setSelectedFile(new java.io.File("decrypted_text.txt"));
+        int userSelection = fileChooser.showSaveDialog(this);
+        
+        if (userSelection == JFileChooser.APPROVE_OPTION) {
+            java.io.File fileToSave = fileChooser.getSelectedFile();
+            
+            // Thêm phần mở rộng .txt nếu người dùng không nhập
+            if (!fileToSave.getName().toLowerCase().endsWith(".txt")) {
+                fileToSave = new java.io.File(fileToSave.getAbsolutePath() + ".txt");
+            }
+            
+            try {
+                // Lưu văn bản đã giải mã ra file với mã hóa đã chọn
+                try (java.io.OutputStreamWriter writer = new java.io.OutputStreamWriter(
+                        new java.io.FileOutputStream(fileToSave), selectedEncoding)) {
+                    writer.write(textToSave);
+                }
+                
+                JOptionPane.showMessageDialog(this, 
+                    "Đã lưu kết quả giải mã thành công!\n" +
+                    "File: " + fileToSave.getAbsolutePath() + "\n" +
+                    "Mã hóa: " + selectedEncoding);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi khi lưu file: " + ex.getMessage());
+            }
+        }
     }
 
     public static void main(String[] args) {
