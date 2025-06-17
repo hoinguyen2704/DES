@@ -351,13 +351,49 @@ public class DES {
         if (hex.length() % 2 != 0) {
             hex = "0" + hex;
         }
-        StringBuilder text = new StringBuilder();
-        for (int i = 0; i < hex.length(); i += 2) {
-            String hexChar = hex.substring(i, i + 2); // Lấy từng cặp hex
-            char decodedChar = (char) Integer.parseInt(hexChar, 16); // Chuyển hex sang ký tự ASCII
-            text.append(decodedChar);
+        
+        // Chuyển đổi hex sang bytes
+        byte[] bytes = new byte[hex.length() / 2];
+        for (int i = 0; i < bytes.length; i++) {
+            int index = i * 2;
+            int v = Integer.parseInt(hex.substring(index, index + 2), 16);
+            bytes[i] = (byte) v;
         }
-        return text.toString();
+        
+        // Thử chuyển đổi sang UTF-8
+        try {
+            String text = new String(bytes, "UTF-8");
+            // Kiểm tra xem văn bản có đọc được không
+            if (isPrintableText(text)) {
+                // Cắt bớt các dấu space thừa ở hai đầu văn bản
+                return text.trim();
+            }
+        } catch (Exception e) {
+            // Bỏ qua lỗi và thử mã hóa khác
+        }
+        
+        // Thử với ISO-8859-1 (Latin-1)
+        try {
+            String text = new String(bytes, "ISO-8859-1");
+            // Cắt bớt các dấu space thừa ở hai đầu văn bản
+            return text.trim();
+        } catch (Exception e) {
+            // Nếu không thể chuyển đổi, trả về chuỗi rỗng
+            return "";
+        }
+    }
+
+    // Phương thức kiểm tra xem văn bản có đọc được không
+    private static boolean isPrintableText(String text) {
+        // Kiểm tra xem văn bản có chứa quá nhiều ký tự không in được không
+        int nonPrintableCount = 0;
+        for (char c : text.toCharArray()) {
+            if (c < 32 || c > 126) {
+                nonPrintableCount++;
+            }
+        }
+        // Nếu hơn 20% ký tự không in được, coi như văn bản không đọc được
+        return nonPrintableCount < text.length() * 0.2;
     }
 
     public static String textToHex(String text) {
@@ -383,3 +419,4 @@ public class DES {
     }
 
 }
+
