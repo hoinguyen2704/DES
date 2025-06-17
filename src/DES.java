@@ -419,24 +419,16 @@ public class DES {
     public static String textToHex(String text) {
         StringBuilder hexString = new StringBuilder();
         
-        // Chuyển đổi chuỗi sang mảng byte sử dụng UTF-8
         try {
+            // Luôn sử dụng UTF-8 để chuyển đổi văn bản sang hex
             byte[] bytes = text.getBytes("UTF-8");
             for (byte b : bytes) {
                 hexString.append(String.format("%02X", b & 0xFF));
             }
         } catch (Exception e) {
-            // Nếu không thể chuyển đổi với UTF-8, thử với ISO-8859-1
-            try {
-                byte[] bytes = text.getBytes("ISO-8859-1");
-                for (byte b : bytes) {
-                    hexString.append(String.format("%02X", b & 0xFF));
-                }
-            } catch (Exception ex) {
-                // Nếu vẫn không được, sử dụng phương pháp cũ
-                for (char ch : text.toCharArray()) {
-                    hexString.append(String.format("%02X", (int) ch));
-                }
+            // Nếu có lỗi, sử dụng phương pháp dự phòng
+            for (char ch : text.toCharArray()) {
+                hexString.append(String.format("%02X", (int) ch));
             }
         }
         
@@ -458,6 +450,7 @@ public class DES {
     }
 
 }
+
 
 
 

@@ -8,13 +8,20 @@ public class DESData {
     public DESData(String textAscii, String key, boolean isAscii) {
         if (isAscii) {
             this.textAscii = textAscii;
-            this.textHex = DES.textToHex(textAscii);
+            this.textHex = DES.textToHex(textAscii); // Sử dụng UTF-8
         } else {
             this.textHex = textAscii; // Đầu vào đã là hex
             try {
-                this.textAscii = DES.hexToText(textAscii);
+                // Chuyển đổi hex sang UTF-8
+                byte[] bytes = new byte[textAscii.length() / 2];
+                for (int i = 0; i < bytes.length; i++) {
+                    int index = i * 2;
+                    int v = Integer.parseInt(textAscii.substring(index, index + 2), 16);
+                    bytes[i] = (byte) v;
+                }
+                this.textAscii = new String(bytes, "UTF-8");
             } catch (Exception e) {
-                this.textAscii = ""; // Không thể chuyển đổi sang ASCII
+                this.textAscii = ""; // Không thể chuyển đổi sang UTF-8
             }
         }
         this.key = key;
@@ -156,4 +163,5 @@ public class DESData {
         return new DESData(decryptedHex, key);
     }
 }
+
 
