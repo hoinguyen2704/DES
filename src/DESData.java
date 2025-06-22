@@ -1,10 +1,19 @@
 public class DESData {
-    private String textAscii;  // Văn bản dạng ASCII
-    private String textHex;    // Biểu diễn hex của văn bản
-    private String key;        // Khóa (dạng hex)
-    private String checksum;   // Checksum để kiểm tra tính toàn vẹn
+    private String textAscii; // Văn bản dạng ASCII
+    private String textHex; // Biểu diễn hex của văn bản
+    private String key; // Khóa (dạng hex)
+    private String checksum; // Checksum để kiểm tra tính toàn vẹn
     private String inputEncoding; // Bảng mã đầu vào
     private String outputEncoding; // Bảng mã đầu ra
+    private String subCheckKey;
+
+    public String getSubCheckKey() {
+        return subCheckKey;
+    }
+
+    public void setSubCheckKey(String subCheckKey) {
+        this.subCheckKey = subCheckKey;
+    }
 
     // Constructor với đầu vào là text ASCII
     public DESData(String textAscii, String key, boolean isAscii) {
@@ -31,13 +40,27 @@ public class DESData {
         this.outputEncoding = "HEX";
         this.checksum = generateChecksum();
     }
-    
+
     // Constructor với đầu vào là hex
     public DESData(String textHex, String key) {
         this(textHex, key, "UTF-8", "HEX");
     }
 
     // Constructor với đầu vào là hex và thông tin bảng mã
+    public DESData(String textHex, String subCheckKey, String key, String inputEncoding, String outputEncoding) {
+        this.textHex = textHex;
+        try {
+            this.textAscii = DES.hexToText(textHex);
+        } catch (Exception e) {
+            this.textAscii = ""; // Không thể chuyển đổi sang ASCII
+        }
+        this.key = key;
+        this.inputEncoding = inputEncoding;
+        this.outputEncoding = outputEncoding;
+        this.subCheckKey = subCheckKey;
+        this.checksum = generateChecksum();
+    }
+
     public DESData(String textHex, String key, String inputEncoding, String outputEncoding) {
         this.textHex = textHex;
         try {
@@ -55,9 +78,9 @@ public class DESData {
     private String generateChecksum() {
         try {
             java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            String dataToHash = textHex + key + inputEncoding + outputEncoding;
+            String dataToHash = textHex + subCheckKey + key + inputEncoding + outputEncoding;
             byte[] hashBytes = md.digest(dataToHash.getBytes());
-            
+
             StringBuilder sb = new StringBuilder();
             for (byte b : hashBytes) {
                 sb.append(String.format("%02X", b));
@@ -67,7 +90,7 @@ public class DESData {
             return "";
         }
     }
-    
+
     // Kiểm tra tính hợp lệ của dữ liệu và khóa
     public boolean isValid() {
         String currentChecksum = generateChecksum();
@@ -107,11 +130,11 @@ public class DESData {
         this.key = key;
         this.checksum = generateChecksum();
     }
-    
+
     public String getChecksum() {
         return checksum;
     }
-    
+
     public String getInputEncoding() {
         return inputEncoding;
     }
@@ -129,7 +152,7 @@ public class DESData {
         this.outputEncoding = outputEncoding;
         this.checksum = generateChecksum();
     }
-    
+
     // Lưu dữ liệu vào file
     public void saveToFile(String filePath) throws java.io.IOException {
         java.io.File file = new java.io.File(filePath);
@@ -141,12 +164,12 @@ public class DESData {
             writer.write(checksum + "|" + obfuscatedKey + "|" + inputEncoding + "|" + outputEncoding + "|" + textHex);
         }
     }
-    
+
     // Đọc dữ liệu từ file
     public static DESData loadFromFile(String filePath) throws java.io.IOException, IllegalArgumentException {
         java.io.File file = new java.io.File(filePath);
         String content = new String(java.nio.file.Files.readAllBytes(file.toPath()), "UTF-8").trim();
-        
+
         String[] parts = content.split("\\|");
         if (parts.length < 5) {
             // Tương thích ngược với định dạng cũ (không có thông tin bảng mã)
@@ -154,23 +177,23 @@ public class DESData {
                 String storedChecksum = parts[0];
                 String obfuscatedKey = parts[1];
                 String textHex = parts[2];
-                
+
                 // Deobfuscate khóa
                 String key = deobfuscateKey(obfuscatedKey, textHex);
 
                 DESData data = new DESData(textHex, key);
-                
+
                 // Kiểm tra tính hợp lệ
                 if (!data.checksum.equals(storedChecksum)) {
                     throw new IllegalArgumentException("Dữ liệu hoặc khóa đã bị sửa đổi");
                 }
-                
+
                 return data;
             } else {
-            throw new IllegalArgumentException("File không đúng định dạng");
+                throw new IllegalArgumentException("File không đúng định dạng");
             }
         }
-        
+
         String storedChecksum = parts[0];
         String obfuscatedKey = parts[1];
         String inputEncoding = parts[2];
@@ -179,17 +202,17 @@ public class DESData {
 
         // Deobfuscate khóa
         String key = deobfuscateKey(obfuscatedKey, textHex);
-        
-        DESData data = new DESData(textHex, key, inputEncoding, outputEncoding);
-        
+
+        DESData data = new DESData(textHex, obfuscatedKey, key, inputEncoding, outputEncoding);
+
         // Kiểm tra tính hợp lệ
         if (!data.checksum.equals(storedChecksum)) {
             throw new IllegalArgumentException("Dữ liệu hoặc khóa đã bị sửa đổi");
         }
-        
+
         return data;
     }
-    
+
     // Phương thức mã hóa
     public String encrypt() {
         int[] plaintextBinary = DES.textToBinary(textHex);
@@ -197,7 +220,7 @@ public class DESData {
         int[] encryptedBinary = DES.encryptText(plaintextBinary, keyBinary);
         return DES.binaryToHex(encryptedBinary);
     }
-    
+
     // Phương thức giải mã
     public String decrypt() {
         int[] cipherBinary = DES.textToBinary(textHex);
@@ -205,13 +228,13 @@ public class DESData {
         int[] decryptedBinary = DES.decryptText(cipherBinary, keyBinary);
         return DES.binaryToHex(decryptedBinary);
     }
-    
+
     // Mã hóa và trả về kết quả dưới dạng DESData
     public DESData encryptToData() {
         String encryptedHex = encrypt();
         return new DESData(encryptedHex, key);
     }
-    
+
     // Giải mã và trả về kết quả dưới dạng DESData
     public DESData decryptToData() {
         String decryptedHex = decrypt();
@@ -223,15 +246,15 @@ public class DESData {
         try {
             // Tạo một salt từ 8 ký tự đầu của textHex
             String salt = textHex.substring(0, Math.min(8, textHex.length()));
-            
+
             // XOR key với salt
             StringBuilder obfuscatedKey = new StringBuilder();
             for (int i = 0; i < key.length(); i++) {
                 char keyChar = key.charAt(i);
                 char saltChar = salt.charAt(i % salt.length());
                 // XOR và chuyển về dạng hex
-                char xorResult = (char)(keyChar ^ saltChar);
-                obfuscatedKey.append(String.format("%02X", (int)xorResult));
+                char xorResult = (char) (keyChar ^ saltChar);
+                obfuscatedKey.append(String.format("%02X", (int) xorResult));
             }
             return obfuscatedKey.toString();
         } catch (Exception e) {
@@ -245,15 +268,15 @@ public class DESData {
         try {
             // Lấy salt từ 8 ký tự đầu của textHex
             String salt = textHex.substring(0, Math.min(8, textHex.length()));
-            
+
             // Chuyển obfuscatedKey từ hex về bytes
             StringBuilder deobfuscatedKey = new StringBuilder();
             for (int i = 0; i < obfuscatedKey.length(); i += 2) {
                 if (i + 2 <= obfuscatedKey.length()) {
                     int value = Integer.parseInt(obfuscatedKey.substring(i, i + 2), 16);
-                    char saltChar = salt.charAt((i/2) % salt.length());
+                    char saltChar = salt.charAt((i / 2) % salt.length());
                     // XOR để khôi phục ký tự gốc
-                    char originalChar = (char)(value ^ saltChar);
+                    char originalChar = (char) (value ^ saltChar);
                     deobfuscatedKey.append(originalChar);
                 }
             }
@@ -264,6 +287,3 @@ public class DESData {
         }
     }
 }
-
-
-

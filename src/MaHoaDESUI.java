@@ -2,6 +2,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.io.*;
+// import org.apache.poi.xwpf.usermodel.XWPFDocument;
+// import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 
 public class MaHoaDESUI extends JFrame {
     // Các hằng số cho các loại bảng mã
@@ -15,18 +18,14 @@ public class MaHoaDESUI extends JFrame {
     private JButton btnEncBrowseFile, btnEncRandomKeyFile, btnEncEncryptFile;
     private JTextArea taEncPlainFile, taEncInputText, taEncResultText;
     private JButton btnEncSaveResult, btnEncEncryptText, btnEncRandomKeyText;
-    JFileChooser fileChooser;
-
     // Components bên Giải mã
     private JTextField txtDecFile, txtDecOutName, txtDecKeyFile, txtDecKeyText;
     private JCheckBox chkDecDebug;
     private JButton btnDecBrowseFile, btnDecDecryptFile;
     private JTextArea taDecCipherFile, taDecResultFile, taDecResultText;
     private JButton btnDecLoadCipher, btnDecDecryptText;
-
     // Đối tượng DESData hiện tại cho việc giải mã
     private DESData currentDecryptData;
-
     // Thêm biến thành viên cho nút Reset
     private JButton btnReset;
     // Thêm biến thành viên cho các combobox chọn bảng mã
@@ -85,14 +84,29 @@ public class MaHoaDESUI extends JFrame {
         fileChooser = new JFileChooser();
         // Sự kiện chọn file: cập nhật txtEncFile và txtEncOutName
         btnEncBrowseFile.addActionListener(e -> {
+            fileChooser = new JFileChooser();
+            fileChooser.setDialogTitle("Chọn file để mã hóa");
+            fileChooser.setAcceptAllFileFilterUsed(false);
+            fileChooser.addChoosableFileFilter(new javax.swing.filechooser.FileFilter() {
+                @Override
+                public boolean accept(java.io.File f) {
+                    String name = f.getName().toLowerCase();
+                    return f.isDirectory() || name.endsWith(".txt") || name.endsWith(".docx");
+                }
+
+                @Override
+                public String getDescription() {
+                    return "Supported Files (*.txt, *.docx)";
+                }
+            });
+
             int returnVal = fileChooser.showOpenDialog(this);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 java.io.File selectedFile = fileChooser.getSelectedFile();
                 txtEncFile.setText(selectedFile.getAbsolutePath());
-
-                // Đọc nội dung file với UTF-8
+                // Đọc nội dung file
                 try {
-                    String fileContent = new String(java.nio.file.Files.readAllBytes(selectedFile.toPath()), "UTF-8");
+                    String fileContent = readFileContent(selectedFile);
                     taEncPlainFile.setText(fileContent);
 
                     // Hiển thị tên file (không có đường dẫn) lên txtEncOutName, thêm hậu tố ".txt"
@@ -102,21 +116,11 @@ public class MaHoaDESUI extends JFrame {
                     String outName = baseName + "_encrypted.txt";
                     txtEncOutName.setText(outName);
                 } catch (java.io.IOException ex) {
-                    // Nếu không đọc được với UTF-8, thử với ISO-8859-1
-                    try {
-                        String fileContent = new String(java.nio.file.Files.readAllBytes(selectedFile.toPath()),
-                                "ISO-8859-1");
-                        taEncPlainFile.setText(fileContent);
-
-                        // Hiển thị tên file (không có đường dẫn) lên txtEncOutName, thêm hậu tố ".txt"
-                        String fileName = selectedFile.getName();
-                        int dotIdx = fileName.lastIndexOf('.');
-                        String baseName = (dotIdx > 0) ? fileName.substring(0, dotIdx) : fileName;
-                        String outName = baseName + "_encrypted.txt";
-                        txtEncOutName.setText(outName);
-                    } catch (java.io.IOException ex2) {
-                        JOptionPane.showMessageDialog(this, "Lỗi khi đọc file: " + ex2.getMessage());
-                    }
+                    JOptionPane.showMessageDialog(this, "Lỗi khi đọc file: " + ex.getMessage());
+                } catch (NoClassDefFoundError ex) {
+                    JOptionPane.showMessageDialog(this, "Thiếu thư viện Apache POI. Vui lòng thêm poi-ooxml.");
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Lỗi không xác định khi đọc file: " + ex.getMessage());
                 }
             }
         });
@@ -370,32 +374,19 @@ public class MaHoaDESUI extends JFrame {
                         fw.write(encryptedText);
                     }
 
-                    // Lưu file bảo mật (kèm khóa, bảng mã và checksum)
-                    String secureFilePath = fileToSave.getAbsolutePath() + ".secure";
-                    java.io.File secureFile = new java.io.File(secureFilePath);
-
-                    // Lấy khóa từ trường nhập khóa
-                    String key = txtEncKeyText.getText().trim().toUpperCase();
-
-                    // Tạo đối tượng DESData với văn bản đã mã hóa, khóa và bảng mã
-                    DESData encryptedData = new DESData(encryptedText, key, inputEncoding, outputEncoding);
-
-                    // Lưu đối tượng DESData vào file bảo mật
-                    encryptedData.saveToFile(secureFilePath);
-
                     JOptionPane.showMessageDialog(this,
                             "Đã lưu thành công!\n" +
-                                    "- File thông thường: " + fileToSave.getAbsolutePath() + "\n" +
-                                    "- File bảo mật (kèm khóa và bảng mã): " + secureFile.getAbsolutePath());
+                                    "- File thông thường: " + fileToSave.getAbsolutePath());
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(this, "Lỗi khi lưu file: " + ex.getMessage());
                 }
             }
         });
-        btnEncEncryptText = new JButton("Mã hóa văn bản");
-        btnEncEncryptText.addActionListener(e -> maHoaVanBan());
+
         c.gridx = 2;
         c.anchor = GridBagConstraints.EAST;
+        btnEncEncryptText = new JButton("Mã hóa văn bản");
+        btnEncEncryptText.addActionListener(e -> maHoaVanBan());
         panelEnc.add(btnEncEncryptText, c);
 
         // --- PANEL GIẢI MÃ (tương tự) ---
@@ -416,7 +407,23 @@ public class MaHoaDESUI extends JFrame {
         btnDecBrowseFile = new JButton("Files...");
         fileChooser = new JFileChooser();
         btnDecBrowseFile.addActionListener(e -> {
+            fileChooser = new JFileChooser();
             fileChooser.setDialogTitle("Chọn file để giải mã");
+            fileChooser.setAcceptAllFileFilterUsed(false);
+            fileChooser.addChoosableFileFilter(new javax.swing.filechooser.FileFilter() {
+                @Override
+                public boolean accept(java.io.File f) {
+                    String name = f.getName().toLowerCase();
+                    return f.isDirectory() || name.endsWith(".txt") || name.endsWith(".docx")
+                            || name.endsWith(".secure");
+                }
+
+                @Override
+                public String getDescription() {
+                    return "Supported Files (*.txt, *.docx, *.secure)";
+                }
+            });
+
             int userSelection = fileChooser.showOpenDialog(MaHoaDESUI.this);
 
             if (userSelection == JFileChooser.APPROVE_OPTION) {
@@ -428,7 +435,8 @@ public class MaHoaDESUI extends JFrame {
                     String fileContent;
                     if (fileToOpen.getName().toLowerCase().endsWith(".secure")) {
                         // File bảo mật - đọc như text thông thường
-                        fileContent = new String(java.nio.file.Files.readAllBytes(fileToOpen.toPath()), StandardCharsets.UTF_8).trim();
+                        fileContent = new String(java.nio.file.Files.readAllBytes(fileToOpen.toPath()),
+                                StandardCharsets.UTF_8).trim();
                     } else {
                         // File thông thường - sử dụng phương thức đọc phù hợp
                         fileContent = readFileContent(fileToOpen);
@@ -468,8 +476,10 @@ public class MaHoaDESUI extends JFrame {
 
                             // Cập nhật combobox bảng mã nếu có thông tin
                             if (data.getInputEncoding() != null && data.getOutputEncoding() != null) {
-                                cboDecInputEncoding.setSelectedItem(data.getOutputEncoding()); // Đầu vào của giải mã là đầu ra của mã hóa
-                                cboDecOutputEncoding.setSelectedItem(data.getInputEncoding()); // Đầu ra của giải mã là đầu vào của mã hóa
+                                cboDecInputEncoding.setSelectedItem(data.getOutputEncoding()); // Đầu vào của giải mã là
+                                                                                               // đầu ra của mã hóa
+                                cboDecOutputEncoding.setSelectedItem(data.getInputEncoding()); // Đầu ra của giải mã là
+                                                                                               // đầu vào của mã hóa
 
                                 // Khóa không cho sửa bảng mã đầu vào
                                 cboDecInputEncoding.setEnabled(false);
@@ -479,6 +489,7 @@ public class MaHoaDESUI extends JFrame {
                                     "Đã tải file bảo mật thành công!\n" +
                                             "Khóa và bảng mã đầu vào đã được tự động điền và không thể thay đổi.");
                         } catch (IllegalArgumentException ex) {
+                            txtDecFile.setText("");
                             // Nếu file không đúng định dạng hoặc khóa đã bị sửa
                             JOptionPane.showMessageDialog(this,
                                     "Lỗi khi đọc file bảo mật: " + ex.getMessage(),
@@ -509,6 +520,8 @@ public class MaHoaDESUI extends JFrame {
                     }
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(this, "Lỗi khi đọc file: " + ex.getMessage());
+                } catch (NoClassDefFoundError ex) {
+                    JOptionPane.showMessageDialog(this, "Thiếu thư viện Apache POI. Vui lòng thêm poi-ooxml.");
                 }
             }
         });
@@ -642,7 +655,7 @@ public class MaHoaDESUI extends JFrame {
                         new java.io.FileOutputStream(outFile), StandardCharsets.UTF_8)) {
                     writer.write(decryptedAscii);
                 }
-                
+
                 JOptionPane.showMessageDialog(this, "Đã giải mã và lưu file: " + outFile.getAbsolutePath());
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Lỗi khi giải mã file: " + ex.getMessage());
@@ -802,8 +815,9 @@ public class MaHoaDESUI extends JFrame {
             } else {
                 // Nếu trường khóa có thể chỉnh sửa, kiểm tra xem đã nhập khóa chưa
                 String key = txtDecKeyText.getText().trim();
-                if (key.isEmpty()) {
-                    JOptionPane.showMessageDialog(this, "Vui lòng nhập khóa!");
+                String plainText = taDecCipherFile.getText().trim();
+                if (key.isEmpty() || plainText.isEmpty()) {
+                    JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ khóa và bản mã!");
                     return;
                 }
                 giaiMaVanBan();
@@ -893,6 +907,52 @@ public class MaHoaDESUI extends JFrame {
         }
     }
 
+    private String readFileContent(java.io.File file) throws IOException {
+        String fileName = file.getName().toLowerCase();
+
+        if (fileName.endsWith(".txt") || fileName.contains("encrypted")) {
+            // Đọc file text thông thường
+            try {
+                return new String(java.nio.file.Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).trim();
+            } catch (IOException ex) {
+                // Thử với ISO-8859-1 nếu UTF-8 không thành công
+                return new String(java.nio.file.Files.readAllBytes(file.toPath()), StandardCharsets.ISO_8859_1).trim();
+            }
+        }
+        // else if (fileName.endsWith(".docx") && !fileName.contains("encrypted")) {
+        // // Đọc file Word .docx
+        // try (FileInputStream fis = new FileInputStream(file);
+        // XWPFDocument doc = new XWPFDocument(fis)) {
+        // StringBuilder content = new StringBuilder();
+        // for (XWPFParagraph p : doc.getParagraphs()) {
+        // String paragraphText = p.getText();
+        // if (paragraphText != null && !paragraphText.trim().isEmpty()) {
+        // content.append(paragraphText).append("\n");
+        // }
+        // }
+        // return content.toString().trim();
+        // } catch (Exception ex) {
+        // throw new IOException("Không thể đọc file .docx: " + ex.getMessage(), ex);
+        // }
+        // }
+        else if (fileName.endsWith(".secure")) {
+            // Đọc file bảo mật
+            String content = new String(java.nio.file.Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).trim();
+            String[] parts = content.split("\\|");
+            if (parts.length >= 3) {
+                return parts[parts.length - 1]; // Trả về textHex (phần cuối)
+            }
+            return "";
+        } else {
+            // File không được hỗ trợ, thử đọc như text
+            try {
+                return new String(java.nio.file.Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).trim();
+            } catch (IOException ex) {
+                return new String(java.nio.file.Files.readAllBytes(file.toPath()), StandardCharsets.ISO_8859_1).trim();
+            }
+        }
+    }
+
     private void giaiMaVanBan() {
         String ciphertext = taDecCipherFile.getText().trim();
         String key = txtDecKeyText.getText().toUpperCase().trim();
@@ -918,9 +978,9 @@ public class MaHoaDESUI extends JFrame {
             // Đảm bảo cipherHex là hex hợp lệ
             if (!cipherHex.matches("^[0-9A-F]+$")) {
                 JOptionPane.showMessageDialog(this, "Bản mã phải ở dạng HEX (0-9, A-F) sau khi chuyển đổi!",
-                    "Lỗi định dạng", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+                        "Lỗi định dạng", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
             // Chia thành các khối 16 ký tự hex (64 bit)
             List<String> blocks = DES.splitHexToBlocks(cipherHex);
@@ -1058,7 +1118,7 @@ public class MaHoaDESUI extends JFrame {
         }
 
         // Tạo dialog để chọn mã hóa
-        String[] encodings = {"UTF-8", "ISO-8859-1", "windows-1252"};
+        String[] encodings = { "UTF-8", "ISO-8859-1", "windows-1252" };
         String selectedEncoding = (String) JOptionPane.showInputDialog(
                 this,
                 "Chọn mã hóa để lưu file:",
@@ -1147,6 +1207,8 @@ public class MaHoaDESUI extends JFrame {
         txtEncKeyFile.setText("");
         txtEncKeyText.setText("");
         taEncPlainFile.setText("");
+        cboEncInputEncoding.setSelectedItem("UTF-8");
+        cboEncOutputEncoding.setSelectedItem("HEX");
         // taEncInputText đã bị comment out, không sử dụng
         // taEncInputText.setText("");
         taEncResultText.setText("");
@@ -1160,7 +1222,9 @@ public class MaHoaDESUI extends JFrame {
         // taDecResultFile đã bị comment out, không sử dụng
         // taDecResultFile.setText("");
         taDecResultText.setText("");
-
+        cboDecInputEncoding.setEnabled(rootPaneCheckingEnabled);
+        cboDecInputEncoding.setSelectedItem("HEX");
+        cboDecOutputEncoding.setSelectedItem("UTF-8");
         // Cho phép chỉnh sửa các trường khóa
         txtDecKeyFile.setEditable(true);
         txtDecKeyText.setEditable(true);
