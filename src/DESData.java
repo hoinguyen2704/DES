@@ -38,6 +38,7 @@ public class DESData {
         this.key = key;
         this.inputEncoding = isAscii ? "UTF-8" : "HEX";
         this.outputEncoding = "HEX";
+        this.subCheckKey = obfuscateKey(key);
         this.checksum = generateChecksum();
     }
 
@@ -69,6 +70,7 @@ public class DESData {
             this.textAscii = ""; // Không thể chuyển đổi sang ASCII
         }
         this.key = key;
+        this.subCheckKey = obfuscateKey(key);
         this.inputEncoding = inputEncoding;
         this.outputEncoding = outputEncoding;
         this.checksum = generateChecksum();
@@ -78,7 +80,7 @@ public class DESData {
     private String generateChecksum() {
         try {
             java.security.MessageDigest md = java.security.MessageDigest.getInstance("SHA-256");
-            String dataToHash = textHex + subCheckKey + key + inputEncoding + outputEncoding;
+            String dataToHash = this.textHex + this.subCheckKey + this.key + this.inputEncoding + this.outputEncoding;
             byte[] hashBytes = md.digest(dataToHash.getBytes());
 
             StringBuilder sb = new StringBuilder();
@@ -161,7 +163,8 @@ public class DESData {
             // Obfuscate khóa trước khi lưu
             String obfuscatedKey = obfuscateKey(key);
             // Format: [CHECKSUM]|[OBFUSCATED_KEY]|[INPUT_ENCODING]|[OUTPUT_ENCODING]|[DATA]
-            writer.write(checksum + "|" + obfuscatedKey + "|" + inputEncoding + "|" + outputEncoding + "|" + textHex);
+            writer.write(this.checksum + "|" + obfuscatedKey + "|" + this.inputEncoding + "|" + this.outputEncoding
+                    + "|" + this.textHex);
         }
     }
 
@@ -202,9 +205,7 @@ public class DESData {
 
         // Deobfuscate khóa
         String key = deobfuscateKey(obfuscatedKey, textHex);
-
         DESData data = new DESData(textHex, obfuscatedKey, key, inputEncoding, outputEncoding);
-
         // Kiểm tra tính hợp lệ
         if (!data.checksum.equals(storedChecksum)) {
             throw new IllegalArgumentException("Dữ liệu hoặc khóa đã bị sửa đổi");

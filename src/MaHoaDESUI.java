@@ -368,15 +368,25 @@ public class MaHoaDESUI extends JFrame {
                     // Lấy thông tin bảng mã
                     String inputEncoding = (String) cboEncInputEncoding.getSelectedItem();
                     String outputEncoding = (String) cboEncOutputEncoding.getSelectedItem();
+                    String key = txtEncKeyText.getText().trim().toUpperCase();
 
                     // Lưu file thông thường chứa văn bản đã mã hóa
                     try (java.io.FileWriter fw = new java.io.FileWriter(fileToSave)) {
                         fw.write(encryptedText);
                     }
 
+                    // Lưu file .secure
+                    String secureFilePath = fileToSave.getAbsolutePath();
+                    if (!secureFilePath.endsWith(".secure")) {
+                        secureFilePath += ".secure";
+                    }
+                    DESData encryptedData = new DESData(encryptedText, key, inputEncoding, outputEncoding);
+                    encryptedData.saveToFile(secureFilePath);
+
                     JOptionPane.showMessageDialog(this,
                             "Đã lưu thành công!\n" +
-                                    "- File thông thường: " + fileToSave.getAbsolutePath());
+                                    "- File thông thường: " + fileToSave.getAbsolutePath() + "\n" +
+                                    "- File bảo mật (.secure): " + secureFilePath);
                 } catch (Exception ex) {
                     JOptionPane.showMessageDialog(this, "Lỗi khi lưu file: " + ex.getMessage());
                 }
@@ -948,7 +958,7 @@ public class MaHoaDESUI extends JFrame {
             try {
                 return new String(java.nio.file.Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).trim();
             } catch (IOException ex) {
-                return new String(java.nio.file.Files.readAllBytes(file.toPath()), StandardCharsets.ISO_8859_1).trim();
+                return new String(java.nio.file.Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8).trim();
             }
         }
     }
