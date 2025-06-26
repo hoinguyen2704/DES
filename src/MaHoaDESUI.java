@@ -9,7 +9,7 @@ import java.io.*;
 public class MaHoaDESUI extends JFrame {
     // Các hằng số cho các loại bảng mã
     private static final String[] ENCODING_OPTIONS = {
-            "UTF-8", "ASCII", "HEX", "BIN", "DEC"
+            "UTF-8", "ASCII", "HEX", "BIN"
     };
     JFileChooser fileChooser;
     // Components bên Mã hóa
@@ -352,23 +352,38 @@ public class MaHoaDESUI extends JFrame {
         panelEnc.add(btnEncSaveResult, c);
         btnEncSaveResult.addActionListener(e -> {
             String encryptedText = taEncResultText.getText();
+            String plaintext = taEncPlainFile.getText();
+            String key = txtEncKeyText.getText().trim().toUpperCase();
+
             if (encryptedText.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Không có dữ liệu để lưu!");
                 return;
             }
+            if (plaintext.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Không có bản rõ để tạo checksum!");
+                return;
+            }
+            if (key.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Vui lòng nhập khóa!");
+                return;
+            }
 
+            // Lưu file .txt chỉ chứa ciphertext
             JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setDialogTitle("Lưu kết quả mã hóa");
+            fileChooser.setDialogTitle("Lưu file ciphertext (.txt)");
+            fileChooser.setSelectedFile(new java.io.File("ciphertext.txt"));
             int userSelection = fileChooser.showSaveDialog(this);
 
             if (userSelection == JFileChooser.APPROVE_OPTION) {
                 java.io.File fileToSave = fileChooser.getSelectedFile();
-
+                // Thêm phần mở rộng .txt nếu chưa có
+                if (!fileToSave.getName().toLowerCase().endsWith(".txt")) {
+                    fileToSave = new java.io.File(fileToSave.getAbsolutePath() + ".txt");
+                }
                 try {
                     // Lấy thông tin bảng mã
                     String inputEncoding = (String) cboEncInputEncoding.getSelectedItem();
                     String outputEncoding = (String) cboEncOutputEncoding.getSelectedItem();
-                    String key = txtEncKeyText.getText().trim().toUpperCase();
 
                     // Lưu file thông thường chứa văn bản đã mã hóa
                     try (java.io.FileWriter fw = new java.io.FileWriter(fileToSave)) {
@@ -417,6 +432,7 @@ public class MaHoaDESUI extends JFrame {
         btnDecBrowseFile = new JButton("Files...");
         fileChooser = new JFileChooser();
         btnDecBrowseFile.addActionListener(e -> {
+            String key = txtDecKeyFile.getText().trim().toUpperCase();
             fileChooser = new JFileChooser();
             fileChooser.setDialogTitle("Chọn file để giải mã");
             fileChooser.setAcceptAllFileFilterUsed(false);
@@ -453,11 +469,11 @@ public class MaHoaDESUI extends JFrame {
                     }
                     String[] parts = fileContent.split("\\|");
 
-                    if (parts.length >= 3 && fileToOpen.getName().toLowerCase().endsWith(".secure")) {
+                    if (parts.length >= 2 && fileToOpen.getName().toLowerCase().endsWith(".secure")) {
                         // Đây có thể là file bảo mật
                         try {
                             // Đọc file theo định dạng bảo mật và lưu vào đối tượng DESData
-                            DESData data = DESData.loadFromFile(fileToOpen.getAbsolutePath());
+                            DESData data = DESData.loadFromFile(fileToOpen.getAbsolutePath(), key);
 
                             // Lưu đối tượng DESData vào biến thành viên để sử dụng sau này
                             currentDecryptData = data;
@@ -466,11 +482,6 @@ public class MaHoaDESUI extends JFrame {
                             taDecCipherFile.setText(data.getTextHex());
 
                             // Hiển thị khóa đọc được lên txtDecKeyFile và txtDecKeyText
-                            txtDecKeyFile.setText(data.getKey());
-                            txtDecKeyFile.setEditable(false);
-                            txtDecKeyText.setText(data.getKey());
-                            txtDecKeyText.setEditable(false);
-
                             // Cập nhật tên file đầu ra
                             String fileName = fileToOpen.getName();
                             // Loại bỏ phần mở rộng .secure nếu có
@@ -483,21 +494,8 @@ public class MaHoaDESUI extends JFrame {
                             }
                             String outName = fileName + "_decrypted.txt";
                             txtDecOutName.setText(outName);
-
-                            // Cập nhật combobox bảng mã nếu có thông tin
-                            if (data.getInputEncoding() != null && data.getOutputEncoding() != null) {
-                                cboDecInputEncoding.setSelectedItem(data.getOutputEncoding()); // Đầu vào của giải mã là
-                                                                                               // đầu ra của mã hóa
-                                cboDecOutputEncoding.setSelectedItem(data.getInputEncoding()); // Đầu ra của giải mã là
-                                                                                               // đầu vào của mã hóa
-
-                                // Khóa không cho sửa bảng mã đầu vào
-                                cboDecInputEncoding.setEnabled(false);
-                            }
-
                             JOptionPane.showMessageDialog(this,
-                                    "Đã tải file bảo mật thành công!\n" +
-                                            "Khóa và bảng mã đầu vào đã được tự động điền và không thể thay đổi.");
+                                    "Đã tải file bảo mật thành công!\n");
                         } catch (IllegalArgumentException ex) {
                             txtDecFile.setText("");
                             // Nếu file không đúng định dạng hoặc khóa đã bị sửa
@@ -513,11 +511,6 @@ public class MaHoaDESUI extends JFrame {
 
                         // Hiển thị nội dung văn bản lên taDecCipherFile
                         taDecCipherFile.setText(fileContent);
-
-                        // Cho phép sửa khóa và bảng mã vì đây là file thông thường
-                        txtDecKeyFile.setEditable(true);
-                        txtDecKeyText.setEditable(true);
-                        cboDecInputEncoding.setEnabled(true);
 
                         // Cập nhật tên file đầu ra
                         String fileName = fileToOpen.getName();
