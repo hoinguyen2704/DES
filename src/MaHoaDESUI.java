@@ -11,6 +11,9 @@ public class MaHoaDESUI extends JFrame {
     private static final String[] ENCODING_OPTIONS = {
             "UTF-8", "ASCII", "HEX", "BIN"
     };
+    private static final String[] ciphertextOptions = {
+            "HEX", "BIN"
+    };
     JFileChooser fileChooser;
     // Components bên Mã hóa
     private JTextField txtEncFile, txtEncOutName, txtEncKeyFile, txtEncKeyText;
@@ -261,7 +264,7 @@ public class MaHoaDESUI extends JFrame {
         panelEnc.add(new JLabel("Bảng mã đầu ra:"), c);
 
         // Sử dụng biến thành viên thay vì tạo biến cục bộ mới
-        cboEncOutputEncoding = new JComboBox<>(ENCODING_OPTIONS);
+        cboEncOutputEncoding = new JComboBox<>(ciphertextOptions);
         cboEncOutputEncoding.setSelectedItem("HEX");
         c.gridx = 3;
         c.fill = GridBagConstraints.HORIZONTAL;
@@ -676,7 +679,7 @@ public class MaHoaDESUI extends JFrame {
         panelDec.add(new JLabel("Bảng mã đầu vào:"), c);
 
         // Sử dụng biến thành viên thay vì tạo biến cục bộ mới
-        cboDecInputEncoding = new JComboBox<>(ENCODING_OPTIONS);
+        cboDecInputEncoding = new JComboBox<>(ciphertextOptions);
         cboDecInputEncoding.setSelectedItem("HEX");
         c.gridx = 1;
         c.fill = GridBagConstraints.HORIZONTAL;
