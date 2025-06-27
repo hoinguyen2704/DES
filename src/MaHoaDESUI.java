@@ -65,7 +65,7 @@ public class MaHoaDESUI extends JFrame {
         // --- PANEL MÃ HÓA ---
         JPanel panelEnc = new JPanel(new GridBagLayout());
         panelEnc.setBorder(BorderFactory.createTitledBorder("Mã hóa"));
-        GridBagConstraints c = new GridBagConstraints();
+        GridBagConstraints c = new GridBagConstraints(); // Tăng kích thước font chữ
         c.insets = new Insets(5, 5, 5, 5);
 
         // Row 0: File:
@@ -73,7 +73,8 @@ public class MaHoaDESUI extends JFrame {
         c.gridy = 0;
         c.anchor = GridBagConstraints.EAST;
         panelEnc.add(new JLabel("File:"), c);
-        txtEncFile = new JTextField(20);
+        txtEncFile = new JTextField(20); // Tăng kích thước font chữ
+        txtEncFile.setFont(new Font("Monospaced", Font.PLAIN, 20));
         c.gridx = 1;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
@@ -133,7 +134,8 @@ public class MaHoaDESUI extends JFrame {
         c.gridx = 0;
         c.anchor = GridBagConstraints.EAST;
         panelEnc.add(new JLabel("Tên file sau khi mã hóa:"), c);
-        txtEncOutName = new JTextField(20);
+        txtEncOutName = new JTextField(20); // Tăng kích thước font chữ
+        txtEncOutName.setFont(new Font("Monospaced", Font.PLAIN, 20));
         c.gridx = 1;
         c.gridwidth = 2;
         c.fill = GridBagConstraints.HORIZONTAL;
@@ -145,8 +147,9 @@ public class MaHoaDESUI extends JFrame {
         c.gridx = 0;
         c.anchor = GridBagConstraints.EAST;
         c.fill = GridBagConstraints.NONE;
-        panelEnc.add(new JLabel("Khóa:"), c);
+        panelEnc.add(new JLabel("Khóa:"), c); // Tăng kích thước font chữ
         txtEncKeyFile = new JTextField("133457799BBCDFF1", 20);
+        txtEncKeyFile.setFont(new Font("Monospaced", Font.PLAIN, 20));
         c.gridx = 1;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
@@ -248,7 +251,7 @@ public class MaHoaDESUI extends JFrame {
         c.gridx = 0;
         c.anchor = GridBagConstraints.EAST;
         c.fill = GridBagConstraints.NONE;
-        panelEnc.add(new JLabel("Bảng mã đầu vào:"), c);
+        panelEnc.add(new JLabel("Bảng mã đầu vào:"), c); // Tăng kích thước font chữ
 
         // Sử dụng biến thành viên thay vì tạo biến cục bộ mới
         cboEncInputEncoding = new JComboBox<>(ENCODING_OPTIONS);
@@ -261,7 +264,7 @@ public class MaHoaDESUI extends JFrame {
         c.gridx = 2;
         c.anchor = GridBagConstraints.EAST;
         c.fill = GridBagConstraints.NONE;
-        panelEnc.add(new JLabel("Bảng mã đầu ra:"), c);
+        panelEnc.add(new JLabel("Bảng mã đầu ra:"), c); // Tăng kích thước font chữ
 
         // Sử dụng biến thành viên thay vì tạo biến cục bộ mới
         cboEncOutputEncoding = new JComboBox<>(ciphertextOptions);
@@ -296,8 +299,9 @@ public class MaHoaDESUI extends JFrame {
         c.gridy = 7;
         c.gridx = 0;
         c.anchor = GridBagConstraints.NORTHWEST;
-        panelEnc.add(new JLabel("Bản rõ:"), c);
+        panelEnc.add(new JLabel("Bản rõ:"), c); // Tăng kích thước font chữ
         taEncPlainFile = new JTextArea(5, 20);
+        taEncPlainFile.setFont(new Font("Monospaced", Font.PLAIN, 20));
         JScrollPane spEncPlainFile = new JScrollPane(taEncPlainFile);
         c.gridx = 1;
         c.gridwidth = 2;
@@ -314,8 +318,9 @@ public class MaHoaDESUI extends JFrame {
         c.gridx = 0;
         c.anchor = GridBagConstraints.EAST;
         c.fill = GridBagConstraints.NONE;
-        panelEnc.add(new JLabel("Khóa:"), c);
+        panelEnc.add(new JLabel("Khóa:"), c); // Tăng kích thước font chữ
         txtEncKeyText = new JTextField("133457799BBCDFF1", 20);
+        txtEncKeyText.setFont(new Font("Monospaced", Font.PLAIN, 20));
         c.gridx = 1;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
@@ -334,8 +339,9 @@ public class MaHoaDESUI extends JFrame {
         c.gridy = 9;
         c.gridx = 0;
         c.anchor = GridBagConstraints.NORTHWEST;
-        panelEnc.add(new JLabel("Kết quả:"), c);
+        panelEnc.add(new JLabel("Kết quả:"), c); // Tăng kích thước font chữ
         taEncResultText = new JTextArea(5, 20);
+        taEncResultText.setFont(new Font("Monospaced", Font.PLAIN, 20));
         JScrollPane spEncResultText = new JScrollPane(taEncResultText);
         c.gridx = 1;
         c.gridwidth = 2;
@@ -427,7 +433,8 @@ public class MaHoaDESUI extends JFrame {
         c.gridy = 0;
         c.anchor = GridBagConstraints.EAST;
         panelDec.add(new JLabel("File:"), c);
-        txtDecFile = new JTextField(20);
+        txtDecFile = new JTextField(20); // Tăng kích thước font chữ
+        txtDecFile.setFont(new Font("Monospaced", Font.PLAIN, 20));
         c.gridx = 1;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
@@ -541,9 +548,9 @@ public class MaHoaDESUI extends JFrame {
         c.gridy = 1;
         c.gridx = 0;
         c.anchor = GridBagConstraints.EAST;
-        panelDec.add(new JLabel("Tên file giải mã:"), c);
+        panelDec.add(new JLabel("Tên file giải mã:"), c); // Tăng kích thước font chữ
         txtDecOutName = new JTextField(20);
-
+        txtDecOutName.setFont(new Font("Monospaced", Font.PLAIN, 20));
         c.gridx = 1;
         c.gridwidth = 2;
         c.fill = GridBagConstraints.HORIZONTAL;
@@ -555,8 +562,9 @@ public class MaHoaDESUI extends JFrame {
         c.gridx = 0;
         c.anchor = GridBagConstraints.EAST;
         c.fill = GridBagConstraints.NONE;
-        panelDec.add(new JLabel("Khóa:"), c);
+        panelDec.add(new JLabel("Khóa:"), c); // Tăng kích thước font chữ
         txtDecKeyFile = new JTextField("133457799BBCDFF1", 20);
+        txtDecKeyFile.setFont(new Font("Monospaced", Font.PLAIN, 20));
         c.gridx = 1;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
@@ -676,7 +684,7 @@ public class MaHoaDESUI extends JFrame {
         c.gridx = 0;
         c.anchor = GridBagConstraints.EAST;
         c.fill = GridBagConstraints.NONE;
-        panelDec.add(new JLabel("Bảng mã đầu vào:"), c);
+        panelDec.add(new JLabel("Bảng mã đầu vào:"), c); // Tăng kích thước font chữ
 
         // Sử dụng biến thành viên thay vì tạo biến cục bộ mới
         cboDecInputEncoding = new JComboBox<>(ciphertextOptions);
@@ -689,7 +697,7 @@ public class MaHoaDESUI extends JFrame {
         c.gridx = 2;
         c.anchor = GridBagConstraints.EAST;
         c.fill = GridBagConstraints.NONE;
-        panelDec.add(new JLabel("Bảng mã đầu ra:"), c);
+        panelDec.add(new JLabel("Bảng mã đầu ra:"), c); // Tăng kích thước font chữ
 
         // Sử dụng biến thành viên thay vì tạo biến cục bộ mới
         cboDecOutputEncoding = new JComboBox<>(ENCODING_OPTIONS);
@@ -724,8 +732,9 @@ public class MaHoaDESUI extends JFrame {
         c.gridy = 7;
         c.gridx = 0;
         c.anchor = GridBagConstraints.NORTHWEST;
-        panelDec.add(new JLabel("Bản mã:"), c);
+        panelDec.add(new JLabel("Bản mã:"), c); // Tăng kích thước font chữ
         taDecCipherFile = new JTextArea(5, 20);
+        taDecCipherFile.setFont(new Font("Monospaced", Font.PLAIN, 20));
         JScrollPane spDecCipherFile = new JScrollPane(taDecCipherFile);
         c.gridx = 1;
         c.gridwidth = 2;
@@ -740,8 +749,9 @@ public class MaHoaDESUI extends JFrame {
         c.gridx = 0;
         c.anchor = GridBagConstraints.EAST;
         c.fill = GridBagConstraints.NONE;
-        panelDec.add(new JLabel("Khóa:"), c);
+        panelDec.add(new JLabel("Khóa:"), c); // Tăng kích thước font chữ
         txtDecKeyText = new JTextField("133457799BBCDFF1", 20);
+        txtDecKeyText.setFont(new Font("Monospaced", Font.PLAIN, 20));
         c.gridx = 1;
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1;
@@ -752,8 +762,9 @@ public class MaHoaDESUI extends JFrame {
         c.gridx = 0;
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.NONE;
-        panelDec.add(new JLabel("Kết quả:"), c);
+        panelDec.add(new JLabel("Kết quả:"), c); // Tăng kích thước font chữ
         taDecResultText = new JTextArea(5, 20);
+        taDecResultText.setFont(new Font("Monospaced", Font.PLAIN, 20));
         JScrollPane spDecResultText = new JScrollPane(taDecResultText);
         c.gridx = 1;
         c.gridwidth = 2;

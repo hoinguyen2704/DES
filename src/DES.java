@@ -151,10 +151,10 @@ public class DES {
         if (len < 16) {
             // Pad with '0' to the left if not enough for 64 bits
             StringBuilder sb = new StringBuilder();
+            sb.append(text);
             for (int i = 0; i < 16 - len; i++) {
                 sb.append('0');
             }
-            sb.append(text);
             text = sb.toString();
             len = 16;
         }
@@ -439,7 +439,7 @@ public class DES {
         List<String> blocks = new ArrayList<>();
         int len = hexText.length();
         while (len % 16 != 0) {
-            hexText = "0" + hexText; // Padding bằng 0 nếu độ dài không chia hết cho 16
+            hexText =  hexText + "0"; // Padding bằng 0 nếu độ dài không chia hết cho 16
             len++;
         }
         for (int i = 0; i < len; i += 16) {
